@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            list-style: none;
+        }
+
+        a {
+            text-decoration: none;
+            color: #000;
+        }
+
+        .clearFix::after {
+            content: "";
+            display: block;
+            clear: both;
+            height: 0;
+        }
+
+        .clearFix {
+            *zoom: 1;
+        }
+
+        .wrap {
+            width: 980px;
+            margin: 0 auto;
+        }
+
+        /**********************/
+        .top {
+            background-color: #e8593c;
+            height: 40px;
+            border-top: 1px solid #b56553;
+            border-bottom: 1px solid #b56553;
+        }
+        .top .page-content h2 {
+            width: 100%;
+            line-height: 40px;
+            color: #fff;
+            text-align: center;
+            font-size: 22px;
+        }
+        .fl { float: left;}
+        .fr {float: right;}
+        /**********************/
+        .title {
+            margin: 20px 0;
+        }
+        .textInput {
+            width: 100%;
+            height: 30px;
+            padding-left: 10px;
+        }
+        .misson {
+            height: 60px;
+            padding: 20px 0;
+            line-height: 40px;
+        }
+        .action a {
+            padding: 5px 0;
+        }
+        .action a.active{
+            border-bottom:1px solid #ff8000;
+        }
+        /**********************/
+        .taskList li {
+            border: 1px solid #000;
+            height: 40px;
+            font-size: 20px;
+            line-height: 40px;
+            padding:0 10px;
+        }
+        .taskList li.completed label{
+            color: #ccc;
+            font-size: 22px;
+            text-decoration: line-through;
+        }
+        .taskList .del {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top">
+        <div class="page-content">
+            <h2>任务列表</h2>
+        </div>
+    </div>
+    <div class="main wrap">
+        <h3 class="title">添加任务:</h3>
+        <input type="text" class="textInput" placeholder="例如:吃饭,打游戏" v-model="missionTitle" @keyup.enter="addMission">
+        <ul class="misson clearFix">
+            <li class="fl" style="color: #ff8000;margin-left: 20px;">
+                {{ checkLength }}个任务还未完成
+            </li>
+            <li class="action fr">
+                <a href="#all" :class=" visibility =='all' ?'active':''">所有任务</a>
+                <a href="#unfinished" :class=" visibility =='unfinished' ?'active':''">未完成任务</a>
+                <a href="#finished" :class=" visibility =='finished' ?'active':''">已完成任务</a>
+            </li>
+        </ul>
+         <h3 class="title">任务列表:</h3>
+        <ul class="taskList">
+            <li :class="{completed:value.ischecked}" v-for="value in filterList">
+                <input type="checkbox" style="width: 20px;height:20px;vertical-align:middle;" v-model="value.ischecked">
+                <label for="">{{ value.title }}</label>
+                <a href="JavaScript:;" class="del fr" @click="delMission(value)">删除</a>
+            </li>
+        </ul>
+    </div>
+</body>
+<script src="./vue.js"></script>
+<script>
+    // // 测试数据 :class="active: 'all'== visibility?'true':'false'"
+    // var list  = [
+    //     {title:"睡觉",ischecked:false},
+    //     {title:"打游戏",ischecked:true}
+    // ]
+
+    var store = {
+        save(key,value){//保存
+            localStorage.setItem(key,JSON.stringify(value));
+        },
+        fetch(key){//获取
+            return JSON.parse(localStorage.getItem(key)) || [];
+        }
+    }
+
+    var fiter = {
+        all:function(list){
+            return list
+        },
+        finished:function(list){
+            return list.filter(function (item){
+                        return item.ischecked;
+                    });
+        },
+        unfinished:function(list){
+            return list.filter(function (item){
+                        return !item.ischecked;
+                    });
+        }
+    }
+    // 取出所有数据
+    var list = store.fetch("msg");
+    // 注册事件
+    var vm = new Vue({
+        el:".main",
+        data:{
+            list:list,
+            missionTitle:'',
+            listMsg:{},
+            visibility:"all",
+        },
+        watch:{
+            list:{
+                handler:function(){
+                    store.save("msg",this.list);
+                },
+                deep:true
+            }
+        },
+        computed:{
+            // 获取未完成任务数
+            checkLength:function(){
+                return this.list.filter(function(item){
+                    return !item.ischecked;
+                }).length
+            },
+            // 过滤的数据
+            filterList:function(){
+                return fiter[this.visibility]?fiter[this.visibility](list):list;
+            }
+        },
+        methods:{
+            // 添加任务
+            addMission(data){
+                this.listMsg = {
+                    title:this.missionTitle,
+                    ischecked:false
+                }
+                this.list.push(this.listMsg);
+                this.missionTitle="";
+            },
+            // 删除任务
+            delMission(missionTitle){
+                 var index = this.list.indexOf(missionTitle);
+                 if(confirm("确定要删除吗?")){
+                     this.list.splice(index,1);
+                 }
+            }
+        }
+    });
+    // 监听地址栏的#之后的字符串
+    function watchHashChange() {
+        var hash = window.location.hash.slice(1);
+        vm.visibility=hash;
+    };
+    watchHashChange();
+    // 给浏览器添加一个hashchange事件
+    window.addEventListener("hashchange",watchHashChange,false);
+</script>
+</html>
